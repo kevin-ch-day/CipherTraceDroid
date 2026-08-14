@@ -2,8 +2,8 @@
 
 The unit of train/test partitioning is a capture session/run, never an individual window. This prevents correlated windows from one capture appearing in both partitions. Primary comparisons will cover foreground-to-foreground, foreground-to-background, background-to-background, background-to-foreground, and mixed-state training evaluated separately by state.
 
-Windows are generated inside declared state intervals. Excluded intervals, including transitions, produce no primary samples. Feature extraction uses encryption-visible metadata only: timing, lengths, protocol class, IP version, direction, counts, rates, and deterministic burst statistics. A zero denominator is represented as the schema-defined value `0.0`; non-finite values are rejected before CSV serialization.
+Windows are generated inside declared state intervals. Excluded intervals, incomplete tails, and empty intervals produce no primary samples. Feature extraction uses valid IP packets only: IP length, timing, transport class, explicit direction, counts, rates, and bounded fractions. A zero denominator is represented as the schema-defined value `0.0`; non-finite values are rejected before CSV serialization.
 
-ADB is used solely for controlled state transitions and independent labels. It must not contribute app package, version, foreground/background state, process data, or lifecycle information to the feature matrix.
+ADB is used solely for controlled state transitions and independent labels. It must not contribute app package, version, foreground/background state, process data, or lifecycle information to the feature matrix. The primary question is how state affects encryption-visible traffic characteristics and cross-state application identification; foreground/background classification is secondary.
 
 `device_control` is a distinct experimental baseline: the target package is force-stopped, launcher is visible, and no deliberate interaction occurs. It must not be labeled as background or pooled into primary foreground/background training.

@@ -1,0 +1,2 @@
+run_id,status,reason,capture_valid,foreground_valid,background_valid,device_control_valid,vpn_cleanup_valid,hash_valid,features_exported
+chrome_exploratory_run01_retry01,INVALID_STATE_CONTAMINATION,Launcher-initiated Chrome icon launch during background,true,true,false,true,true,true,false

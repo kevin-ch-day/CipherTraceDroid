@@ -1,8 +1,8 @@
 #pragma once
 
+#include "ciphertracedroid/experiments/capture_source.hpp"
 #include "ciphertracedroid/traffic/windowing.hpp"
 
-#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -10,52 +10,67 @@ namespace ciphertracedroid::features {
 
 inline constexpr int kFeatureSchemaVersion = 1;
 
-struct FeatureRow {
+struct SampleMetadata {
     int schema_version{kFeatureSchemaVersion};
     std::string sample_id;
     std::string session_id;
     std::string app_id;
     std::string run_id;
     std::string activity_state;
+    experiments::CaptureSourceKind capture_source{experiments::CaptureSourceKind::synthetic_fixture};
+    std::string capture_reference;
     double window_start{};
     double window_end{};
-    std::size_t packet_count{};
-    double total_bytes{};
+    bool synthetic_test_only{};
+    bool pilot{};
+};
+
+struct FeatureVector {
+    double packet_count{};
+    double total_ip_bytes{};
     double packets_per_second{};
-    double bytes_per_second{};
-    double size_mean{};
-    double size_stddev{};
-    double size_min{};
-    double size_max{};
-    double size_median{};
-    double size_q1{};
-    double size_q3{};
-    std::size_t outbound_packet_count{};
-    std::size_t inbound_packet_count{};
-    double outbound_bytes{};
-    double inbound_bytes{};
-    double outbound_inbound_packet_ratio{};
-    double outbound_inbound_byte_ratio{};
-    std::size_t unknown_direction_count{};
+    double ip_bytes_per_second{};
+    double ip_size_mean{};
+    double ip_size_stddev{};
+    double ip_size_min{};
+    double ip_size_max{};
+    double ip_size_median{};
+    double ip_size_q1{};
+    double ip_size_q3{};
+    double outbound_packet_count{};
+    double inbound_packet_count{};
+    double unknown_packet_count{};
+    double outbound_ip_bytes{};
+    double inbound_ip_bytes{};
+    double unknown_ip_bytes{};
+    double outbound_packet_fraction{};
+    double inbound_packet_fraction{};
+    double unknown_packet_fraction{};
+    double outbound_byte_fraction{};
+    double inbound_byte_fraction{};
+    double unknown_byte_fraction{};
     double iat_mean{};
     double iat_stddev{};
     double iat_median{};
     double iat_min{};
     double iat_max{};
-    std::size_t idle_gap_count{};
-    std::size_t burst_count{};
-    double burst_mean_packets{};
-    double burst_max_packets{};
-    double burst_mean_bytes{};
-    double burst_max_bytes{};
+    double tcp_packet_fraction{};
+    double udp_packet_fraction{};
+    double other_transport_fraction{};
+
+    [[nodiscard]] std::vector<double> values() const;
 };
 
-[[nodiscard]] FeatureRow extract_features(const traffic::TrafficWindow& window,
-                                          const std::string& app_id,
-                                          const std::string& run_id,
-                                          double idle_gap_seconds = 1.0);
-[[nodiscard]] bool has_finite_values(const FeatureRow& row);
+struct DatasetSample {
+    SampleMetadata metadata;
+    FeatureVector predictors;
+};
+
+[[nodiscard]] DatasetSample extract_features(const traffic::TrafficWindow& window,
+                                             SampleMetadata metadata);
+[[nodiscard]] bool has_finite_values(const FeatureVector& vector);
+[[nodiscard]] std::vector<std::string> predictor_names();
 [[nodiscard]] std::string csv_header();
-[[nodiscard]] std::string to_csv_row(const FeatureRow& row);
+[[nodiscard]] std::string to_csv_row(const DatasetSample& sample);
 
 }  // namespace ciphertracedroid::features

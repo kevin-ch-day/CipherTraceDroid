@@ -1,0 +1,25 @@
+{
+    "schema_version": "1",
+    "created_at_utc": "2026-08-14T03:27:47Z",
+    "package_name": "com.android.chrome",
+    "package_version_name": "151.0.7922.137",
+    "package_version_code": "792213733",
+    "device_manufacturer": "motorola",
+    "device_model": "moto g 5G - 2024",
+    "android_release": "15",
+    "android_api_level": "35",
+    "device_clock_offset_seconds": "0",
+    "adb_shell_uid": "2000",
+    "on_device_tcpdump": "not_available",
+    "pcapdroid": "1.9.1",
+    "vpn_active": "true",
+    "network_route": "1.1.1.1 via 192.168.0.1 dev wlan0 table 1020 src 192.168.0.23 uid 2000      cache",
+    "top_activity_before_run": "ResumedActivity: ActivityRecord{95ead8d u0 com.emanuelef.remote_capture/.activities.CaptureCtrl t24}",
+    "capture_vantage": "unvalidated",
+    "collection_gates": [
+      "Validate that the chosen capture interface observes the controlled device traffic.",
+      "Record host UTC boundaries and state verification for foreground and background intervals.",
+      "Hash the finalized PCAP and add it to the strict session manifest."
+    ],
+    "device_actions_performed": []
+}

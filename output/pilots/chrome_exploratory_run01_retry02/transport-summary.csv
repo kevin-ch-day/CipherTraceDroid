@@ -1,0 +1,4 @@
+state,packet_count,total_ip_bytes,aggregate_mean_ip_length,min_ip_length,max_ip_length,tcp_packets,udp_packets,other_packets,udp_port_443_packets,udp_port_443_packet_fraction,udp_port_443_udp_fraction
+device_control,26,5373,206.653846,40,1331,24,2,0,0,0.000000000,0.000000000
+foreground,1021,310284,303.902057,40,6225,634,387,0,337,0.330068560,0.870801034
+background,275,180300,655.636364,40,5640,127,148,0,142,0.516363636,0.959459459

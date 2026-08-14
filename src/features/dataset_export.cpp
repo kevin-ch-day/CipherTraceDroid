@@ -19,7 +19,6 @@ std::size_t export_features(const std::filesystem::path& manifest_path,
                             const FeatureExportOptions& options)
 {
     if (!std::isfinite(options.window_seconds) || options.window_seconds <= 0.0) throw std::invalid_argument("window duration must be finite and positive");
-    if (!std::isfinite(options.idle_gap_seconds) || options.idle_gap_seconds < 0.0) throw std::invalid_argument("idle gap must be finite and non-negative");
     const auto rows = experiments::read_session_manifest(manifest_path);
     util::debug_log("features", "manifest validated; beginning export");
     const auto temporary = output_path.string() + ".tmp";
@@ -42,7 +41,15 @@ std::size_t export_features(const std::filesystem::path& manifest_path,
         for (auto& packet : packets) packet.timestamp_seconds -= origin;
         const std::vector<traffic::StateInterval> intervals{{experiments::to_string(row.state), row.start_offset_seconds, row.end_offset_seconds, true}};
         for (const auto& window : traffic::make_windows(packets, row.session_id, intervals, options.window_seconds)) {
-            output << to_csv_row(extract_features(window, row.app_id, row.run_id, options.idle_gap_seconds)) << '\n';
+            if (window.packets.empty()) continue;
+            SampleMetadata metadata;
+            metadata.app_id = row.app_id;
+            metadata.run_id = row.run_id;
+            metadata.capture_source = row.capture_source;
+            metadata.capture_reference = row.capture_sha256;
+            metadata.synthetic_test_only = row.synthetic_test_only;
+            metadata.pilot = row.pilot;
+            output << to_csv_row(extract_features(window, std::move(metadata))) << '\n';
             ++rows_written;
         }
     }

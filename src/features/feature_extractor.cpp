@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
-#include <limits>
+#include <numeric>
 #include <sstream>
 #include <stdexcept>
 
@@ -13,9 +13,8 @@ namespace {
 double average(const std::vector<double>& values)
 {
     if (values.empty()) return 0.0;
-    double total = 0.0;
-    for (const double value : values) total += value;
-    return total / static_cast<double>(values.size());
+    return std::accumulate(values.begin(), values.end(), 0.0) /
+           static_cast<double>(values.size());
 }
 
 double standard_deviation(const std::vector<double>& values, double mean)
@@ -32,102 +31,161 @@ double quantile(const std::vector<double>& sorted, double fraction)
     const double location = fraction * static_cast<double>(sorted.size() - 1);
     const auto lower = static_cast<std::size_t>(std::floor(location));
     const auto upper = static_cast<std::size_t>(std::ceil(location));
-    return sorted[lower] + (sorted[upper] - sorted[lower]) * (location - static_cast<double>(lower));
+    return sorted[lower] + (sorted[upper] - sorted[lower]) *
+                               (location - static_cast<double>(lower));
 }
 
-double safe_ratio(double numerator, double denominator)
+double fraction(double numerator, double denominator)
 {
-    // The schema defines a zero denominator as 0.0; no undefined value is exported.
     return denominator == 0.0 ? 0.0 : numerator / denominator;
 }
 
-bool finite(double value) { return std::isfinite(value); }
+std::string csv_escape(const std::string& value)
+{
+    if (value.find_first_of(",\"\n") == std::string::npos) return value;
+    std::string result{"\""};
+    for (char character : value) result += character == '\"' ? "\"\"" : std::string(1, character);
+    return result + '\"';
+}
 
 }  // namespace
 
-FeatureRow extract_features(const traffic::TrafficWindow& window, const std::string& app_id,
-                            const std::string& run_id, double idle_gap_seconds)
+std::vector<double> FeatureVector::values() const
 {
-    if (idle_gap_seconds < 0.0 || !finite(idle_gap_seconds)) {
-        throw std::invalid_argument("idle-gap threshold must be finite and non-negative");
-    }
+    return {packet_count, total_ip_bytes, packets_per_second, ip_bytes_per_second,
+            ip_size_mean, ip_size_stddev, ip_size_min, ip_size_max, ip_size_median,
+            ip_size_q1, ip_size_q3, outbound_packet_count, inbound_packet_count,
+            unknown_packet_count, outbound_ip_bytes, inbound_ip_bytes, unknown_ip_bytes,
+            outbound_packet_fraction, inbound_packet_fraction, unknown_packet_fraction,
+            outbound_byte_fraction, inbound_byte_fraction, unknown_byte_fraction,
+            iat_mean, iat_stddev, iat_median, iat_min, iat_max, tcp_packet_fraction,
+            udp_packet_fraction, other_transport_fraction};
+}
+
+std::vector<std::string> predictor_names()
+{
+    return {"packet_count", "total_ip_bytes", "packets_per_second", "ip_bytes_per_second",
+            "ip_size_mean", "ip_size_stddev", "ip_size_min", "ip_size_max",
+            "ip_size_median", "ip_size_q1", "ip_size_q3", "outbound_packet_count",
+            "inbound_packet_count", "unknown_packet_count", "outbound_ip_bytes",
+            "inbound_ip_bytes", "unknown_ip_bytes", "outbound_packet_fraction",
+            "inbound_packet_fraction", "unknown_packet_fraction", "outbound_byte_fraction",
+            "inbound_byte_fraction", "unknown_byte_fraction", "iat_mean", "iat_stddev",
+            "iat_median", "iat_min", "iat_max", "tcp_packet_fraction",
+            "udp_packet_fraction", "other_transport_fraction"};
+}
+
+DatasetSample extract_features(const traffic::TrafficWindow& window, SampleMetadata metadata)
+{
     const double duration = window.end_time - window.start_time;
-    if (duration <= 0.0 || !finite(duration)) {
+    if (duration <= 0.0 || !std::isfinite(duration)) {
         throw std::invalid_argument("window duration must be finite and positive");
     }
-    FeatureRow row{.sample_id = window.window_id, .session_id = window.session_id,
-                   .app_id = app_id, .run_id = run_id, .activity_state = window.activity_state,
-                   .window_start = window.start_time, .window_end = window.end_time,
-                   .packet_count = window.packets.size()};
+    metadata.sample_id = window.window_id;
+    metadata.session_id = window.session_id;
+    metadata.activity_state = window.activity_state;
+    metadata.window_start = window.start_time;
+    metadata.window_end = window.end_time;
+    FeatureVector result;
     std::vector<double> sizes;
     std::vector<double> iats;
     sizes.reserve(window.packets.size());
-    for (std::size_t i = 0; i < window.packets.size(); ++i) {
-        const auto& packet = window.packets[i];
-        const double bytes = static_cast<double>(packet.original_length);
+    double tcp_count = 0.0;
+    double udp_count = 0.0;
+    double other_count = 0.0;
+    for (std::size_t index = 0; index < window.packets.size(); ++index) {
+        const auto& packet = window.packets[index];
+        if (packet.network_layer == traffic::NetworkLayer::unknown || packet.ip_packet_length == 0) {
+            throw std::invalid_argument("feature window contains a non-IP or lengthless packet");
+        }
+        const double bytes = static_cast<double>(packet.ip_packet_length);
         sizes.push_back(bytes);
-        row.total_bytes += bytes;
+        result.total_ip_bytes += bytes;
         if (packet.direction == traffic::Direction::outbound) {
-            ++row.outbound_packet_count; row.outbound_bytes += bytes;
+            ++result.outbound_packet_count;
+            result.outbound_ip_bytes += bytes;
         } else if (packet.direction == traffic::Direction::inbound) {
-            ++row.inbound_packet_count; row.inbound_bytes += bytes;
+            ++result.inbound_packet_count;
+            result.inbound_ip_bytes += bytes;
         } else {
-            ++row.unknown_direction_count;
+            ++result.unknown_packet_count;
+            result.unknown_ip_bytes += bytes;
         }
-        if (i > 0) {
-            const double gap = packet.timestamp_seconds - window.packets[i - 1].timestamp_seconds;
-            if (gap < 0.0 || !finite(gap)) throw std::invalid_argument("packets must be timestamp ordered");
+        if (packet.transport_protocol == traffic::TransportProtocol::tcp) ++tcp_count;
+        else if (packet.transport_protocol == traffic::TransportProtocol::udp) ++udp_count;
+        else ++other_count;
+        if (index > 0) {
+            const double gap = packet.timestamp_seconds - window.packets[index - 1].timestamp_seconds;
+            if (gap < 0.0 || !std::isfinite(gap)) {
+                throw std::invalid_argument("packets must be in nondecreasing timestamp order");
+            }
             iats.push_back(gap);
-            if (gap > idle_gap_seconds) ++row.idle_gap_count;
         }
     }
-    row.packets_per_second = static_cast<double>(row.packet_count) / duration;
-    row.bytes_per_second = row.total_bytes / duration;
+    result.packet_count = static_cast<double>(window.packets.size());
+    result.packets_per_second = result.packet_count / duration;
+    result.ip_bytes_per_second = result.total_ip_bytes / duration;
     std::sort(sizes.begin(), sizes.end());
-    row.size_mean = average(sizes); row.size_stddev = standard_deviation(sizes, row.size_mean);
-    if (!sizes.empty()) { row.size_min = sizes.front(); row.size_max = sizes.back(); }
-    row.size_q1 = quantile(sizes, .25); row.size_median = quantile(sizes, .5); row.size_q3 = quantile(sizes, .75);
-    row.outbound_inbound_packet_ratio = safe_ratio(static_cast<double>(row.outbound_packet_count), static_cast<double>(row.inbound_packet_count));
-    row.outbound_inbound_byte_ratio = safe_ratio(row.outbound_bytes, row.inbound_bytes);
-    std::sort(iats.begin(), iats.end());
-    row.iat_mean = average(iats); row.iat_stddev = standard_deviation(iats, row.iat_mean);
-    if (!iats.empty()) { row.iat_min = iats.front(); row.iat_max = iats.back(); }
-    row.iat_median = quantile(iats, .5);
-    // A burst is a maximal packet sequence separated by gaps no greater than the configured idle threshold.
-    if (!window.packets.empty()) {
-        std::vector<double> burst_packets{1.0}; std::vector<double> burst_bytes{static_cast<double>(window.packets.front().original_length)};
-        for (std::size_t i = 1; i < window.packets.size(); ++i) {
-            const double gap = window.packets[i].timestamp_seconds - window.packets[i - 1].timestamp_seconds;
-            if (gap > idle_gap_seconds) { burst_packets.push_back(0.0); burst_bytes.push_back(0.0); }
-            burst_packets.back() += 1.0; burst_bytes.back() += static_cast<double>(window.packets[i].original_length);
-        }
-        row.burst_count = burst_packets.size(); row.burst_mean_packets = average(burst_packets);
-        row.burst_max_packets = *std::max_element(burst_packets.begin(), burst_packets.end());
-        row.burst_mean_bytes = average(burst_bytes); row.burst_max_bytes = *std::max_element(burst_bytes.begin(), burst_bytes.end());
+    result.ip_size_mean = average(sizes);
+    result.ip_size_stddev = standard_deviation(sizes, result.ip_size_mean);
+    if (!sizes.empty()) {
+        result.ip_size_min = sizes.front();
+        result.ip_size_max = sizes.back();
     }
-    if (!has_finite_values(row)) throw std::runtime_error("feature extraction produced a non-finite value");
-    return row;
+    result.ip_size_q1 = quantile(sizes, 0.25);
+    result.ip_size_median = quantile(sizes, 0.5);
+    result.ip_size_q3 = quantile(sizes, 0.75);
+    result.outbound_packet_fraction = fraction(result.outbound_packet_count, result.packet_count);
+    result.inbound_packet_fraction = fraction(result.inbound_packet_count, result.packet_count);
+    result.unknown_packet_fraction = fraction(result.unknown_packet_count, result.packet_count);
+    result.outbound_byte_fraction = fraction(result.outbound_ip_bytes, result.total_ip_bytes);
+    result.inbound_byte_fraction = fraction(result.inbound_ip_bytes, result.total_ip_bytes);
+    result.unknown_byte_fraction = fraction(result.unknown_ip_bytes, result.total_ip_bytes);
+    std::sort(iats.begin(), iats.end());
+    result.iat_mean = average(iats);
+    result.iat_stddev = standard_deviation(iats, result.iat_mean);
+    if (!iats.empty()) {
+        result.iat_min = iats.front();
+        result.iat_max = iats.back();
+    }
+    result.iat_median = quantile(iats, 0.5);
+    result.tcp_packet_fraction = fraction(tcp_count, result.packet_count);
+    result.udp_packet_fraction = fraction(udp_count, result.packet_count);
+    result.other_transport_fraction = fraction(other_count, result.packet_count);
+    if (!has_finite_values(result)) throw std::runtime_error("feature extraction produced a non-finite predictor");
+    return {std::move(metadata), result};
 }
 
-bool has_finite_values(const FeatureRow& row)
+bool has_finite_values(const FeatureVector& vector)
 {
-    const double numeric[] = {row.window_start, row.window_end, row.total_bytes, row.packets_per_second, row.bytes_per_second, row.size_mean, row.size_stddev, row.size_min, row.size_max, row.size_median, row.size_q1, row.size_q3, row.outbound_bytes, row.inbound_bytes, row.outbound_inbound_packet_ratio, row.outbound_inbound_byte_ratio, row.iat_mean, row.iat_stddev, row.iat_median, row.iat_min, row.iat_max, row.burst_mean_packets, row.burst_max_packets, row.burst_mean_bytes, row.burst_max_bytes};
-    return std::all_of(std::begin(numeric), std::end(numeric), finite);
+    const auto values = vector.values();
+    return std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
 }
 
 std::string csv_header()
 {
-    return "feature_schema_version,sample_id,session_id,app_id,run_id,activity_state,window_start_s,window_end_s,packet_count,total_bytes,packets_per_second,bytes_per_second,size_mean,size_stddev,size_min,size_max,size_median,size_q1,size_q3,outbound_packet_count,inbound_packet_count,outbound_bytes,inbound_bytes,outbound_inbound_packet_ratio,outbound_inbound_byte_ratio,unknown_direction_count,iat_mean,iat_stddev,iat_median,iat_min,iat_max,idle_gap_count,burst_count,burst_mean_packets,burst_max_packets,burst_mean_bytes,burst_max_bytes";
+    std::ostringstream output;
+    output << "feature_schema_version,sample_id,session_id,app_id,run_id,activity_state,"
+              "capture_source,capture_reference,window_start_s,window_end_s,synthetic_test_only,pilot";
+    for (const auto& name : predictor_names()) output << ',' << name;
+    return output.str();
 }
 
-std::string to_csv_row(const FeatureRow& row)
+std::string to_csv_row(const DatasetSample& sample)
 {
-    if (!has_finite_values(row)) throw std::invalid_argument("refusing to serialize non-finite feature values");
-    std::ostringstream out; out << std::setprecision(17);
-    out << row.schema_version << ',' << row.sample_id << ',' << row.session_id << ',' << row.app_id << ',' << row.run_id << ',' << row.activity_state;
-    const double numeric[] = {row.window_start,row.window_end,static_cast<double>(row.packet_count),row.total_bytes,row.packets_per_second,row.bytes_per_second,row.size_mean,row.size_stddev,row.size_min,row.size_max,row.size_median,row.size_q1,row.size_q3,static_cast<double>(row.outbound_packet_count),static_cast<double>(row.inbound_packet_count),row.outbound_bytes,row.inbound_bytes,row.outbound_inbound_packet_ratio,row.outbound_inbound_byte_ratio,static_cast<double>(row.unknown_direction_count),row.iat_mean,row.iat_stddev,row.iat_median,row.iat_min,row.iat_max,static_cast<double>(row.idle_gap_count),static_cast<double>(row.burst_count),row.burst_mean_packets,row.burst_max_packets,row.burst_mean_bytes,row.burst_max_bytes};
-    for (const double value : numeric) out << ',' << value;
-    return out.str();
+    if (!has_finite_values(sample.predictors)) throw std::invalid_argument("refusing to serialize non-finite predictors");
+    std::ostringstream output;
+    output << std::setprecision(17) << sample.metadata.schema_version << ','
+           << csv_escape(sample.metadata.sample_id) << ',' << csv_escape(sample.metadata.session_id)
+           << ',' << csv_escape(sample.metadata.app_id) << ',' << csv_escape(sample.metadata.run_id)
+           << ',' << csv_escape(sample.metadata.activity_state) << ','
+           << experiments::to_string(sample.metadata.capture_source) << ','
+           << csv_escape(sample.metadata.capture_reference) << ',' << sample.metadata.window_start
+           << ',' << sample.metadata.window_end << ','
+           << (sample.metadata.synthetic_test_only ? "true" : "false") << ','
+           << (sample.metadata.pilot ? "true" : "false");
+    for (double value : sample.predictors.values()) output << ',' << value;
+    return output.str();
 }
 
 }  // namespace ciphertracedroid::features

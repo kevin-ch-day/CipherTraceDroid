@@ -39,3 +39,21 @@
 **Reason:** routed device capture provides no defensible packet-to-app attribution. The control estimates shared device/environment traffic.
 
 **Alternatives:** per-app packet claims, deferred until a capture source supplies attribution without entering the predictor matrix.
+
+## 2026-08-14 — Capture-source enforcement
+
+**Decision:** represent routed-primary, PCAPdroid auxiliary, and synthetic sources with a typed capability model carried in sample metadata.
+
+**Reason:** publication eligibility and routed-timing requirements must fail before training when a source cannot support them.
+
+## 2026-08-14 — Feature Schema v1
+
+**Decision:** packet size means IP packet length; non-IP frames are capture diagnostics only; direction uses explicit device identity; primary windows are complete fixed-duration intervals.
+
+**Reason:** these definitions correspond to the intended routed observer and avoid frame-header, tail-duration, and direction-guess artifacts.
+
+## 2026-08-14 — Mixed training
+
+**Decision:** mixed training contributes the same deterministic sample count from each application/run/state group, using training data only.
+
+**Reason:** a longer state segment must not dominate solely by producing more windows. Test-set information is never consulted.

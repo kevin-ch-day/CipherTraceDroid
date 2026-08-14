@@ -1,0 +1,2 @@
+run_id,status,reason,capture_readable,source_correct,hash_recorded,control_valid,foreground_valid,background_valid,vpn_cleanup_valid,features_generated
+chrome_exploratory_run01,INVALID,Chrome resumed before device-control gate,true,true,true,false,false,false,true,false

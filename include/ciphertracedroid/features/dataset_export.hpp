@@ -8,7 +8,6 @@ namespace ciphertracedroid::features {
 
 struct FeatureExportOptions {
     double window_seconds{5.0};
-    double idle_gap_seconds{1.0};
     std::string device_ip;
 };
 

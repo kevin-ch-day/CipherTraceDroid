@@ -1,0 +1,15 @@
+event,utc_epoch,trace_offset_s,include,detail
+capture_first_packet,1786681836.580462,0.000000000,false,PCAPdroid auxiliary capture begins
+device_control_start,1786681883.727225522,47.146763522,true,Chrome force-stopped and launcher verified
+device_control_end,1786681943.727225522,107.146763522,true,Exact 60-second analysis boundary
+foreground_transition,1786681959.286183848,122.705721848,false,Chrome launch and guard
+foreground_start,1786681991.351121483,154.770659483,true,Fixed Wikipedia page requested
+foreground_scroll_1,1786682021.491197426,184.910735426,true,Deterministic upward swipe
+foreground_reload,1786682052.134051381,215.553589381,true,Fixed Wikipedia page requested again
+foreground_scroll_2,1786682082.294181094,245.713719094,true,Deterministic upward swipe
+foreground_end,1786682111.351121483,274.770659483,true,Exact 120-second analysis boundary
+background_transition,1786682121.263939491,284.683477491,false,HOME and guard
+background_start,1786682149.023330649,312.442868649,true,Launcher verified and Chrome not resumed
+background_end,1786682269.023330649,432.442868649,true,Exact 120-second analysis boundary
+capture_stop_request,1786682279.477236176,442.896774176,false,Stop and cleanup begins
+capture_last_packet,1786682280.283159,443.702697000,false,Named capture finalized

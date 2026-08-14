@@ -1,0 +1,6 @@
+comparison,feature,descriptive_difference,eligible_for_inference,note
+foreground_minus_background,mean_packets_per_second,-0.288405797,false,Nonempty windows only; one run
+foreground_minus_background,mean_ip_bytes_per_second,-3311.878260870,false,Nonempty windows only; one run
+foreground_minus_background,mean_ip_size,-5.244972778,false,Nonempty windows only; one run
+foreground_minus_background,mean_tcp_fraction,-0.269995047,false,Nonempty windows only; one run
+foreground_minus_background,mean_udp_fraction,0.269995047,false,Nonempty windows only; one run

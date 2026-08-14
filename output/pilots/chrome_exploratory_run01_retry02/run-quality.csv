@@ -1,0 +1,2 @@
+run_id,status,reason,capture_valid,foreground_valid,background_valid,device_control_valid,vpn_cleanup_valid,hash_valid,features_finite,modeling_volume_sufficient
+chrome_exploratory_run01_retry02,VALID_AUXILIARY_PILOT,All three state intervals and cleanup gates passed,true,true,true,true,true,true,true,false

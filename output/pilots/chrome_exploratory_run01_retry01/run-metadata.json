@@ -1,0 +1,23 @@
+{
+  "run_id": "chrome_exploratory_run01_retry01",
+  "application": "Google Chrome",
+  "package": "com.android.chrome",
+  "version": "151.0.7922.137",
+  "capture_source": "pcapdroid_vpn_boundary_auxiliary",
+  "capture_scope": "whole_device_unfiltered",
+  "pilot": true,
+  "exploratory": true,
+  "publication_primary_eligible": false,
+  "tls_decryption": false,
+  "full_payload": false,
+  "device_serial": "ZY22JK89DR",
+  "android": "15",
+  "clock_offset_seconds": 0,
+  "capture_first_timestamp_epoch": 1786681210.9496191,
+  "capture_last_timestamp_epoch": 1786681640.2544849,
+  "capture_duration_seconds": 429.304865837,
+  "capture_packet_count": 22516,
+  "capture_sha256": "fc04f68c1a274c5d6509862885691768fde630fa58860c2e524186c043390dc5",
+  "quality": "INVALID_STATE_CONTAMINATION",
+  "quality_reason": "Chrome was relaunched from its launcher icon during the intended background condition."
+}

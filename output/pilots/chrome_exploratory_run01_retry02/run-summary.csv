@@ -1,0 +1,2 @@
+run_id,capture_source,capture_scope,artifact_bytes,duration_seconds,ipv4_packets,tcp_packets,udp_packets,malformed_packets,scheduled_windows,exported_nonempty_windows,quality,repeatability
+chrome_exploratory_run01_retry02,pcapdroid_vpn_boundary_auxiliary,whole_device_unfiltered,3850337,443.702697039,8391,5098,3293,0,60,31,VALID_AUXILIARY_PILOT,UNKNOWN_ONE_VALID_RUN

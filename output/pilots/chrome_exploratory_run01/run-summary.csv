@@ -1,0 +1,2 @@
+run_id,status,capture_source,capture_scope,capture_duration_s,total_frames,valid_ipv4,valid_ipv6,tcp_packets,udp_packets,malformed_packets,device_control_windows,foreground_windows,background_windows
+chrome_exploratory_run01,INVALID,pcapdroid_vpn_boundary_auxiliary,whole_device,56.034297228,16642,16642,0,5465,11177,0,0,0,0

@@ -1,0 +1,2 @@
+session_id,app_id,run_id,state,capture_file,capture_sha256,capture_source,start_offset_s,end_offset_s,include,synthetic_test_only,pilot
+chrome_pilot_run01_fg,chrome,chrome_pilot_run01_20260814T0400Z,foreground,capture.pcap,1892bc8c5288b1246d952d15c761195a0b3588e3e174002197c14e2cfec52f60,pcapdroid_vpn_boundary_auxiliary,9.056686878,66.967886209,true,false,true

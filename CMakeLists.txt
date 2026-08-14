@@ -14,9 +14,17 @@ pkg_check_modules(PCAP REQUIRED IMPORTED_TARGET libpcap)
 find_package(OpenSSL REQUIRED)
 
 add_library(ciphertracedroid_core STATIC
+    src/analysis/condition_analysis.cpp
     src/app.cpp
     src/capture/pcap_reader.cpp
+    src/device/adb_client.cpp
+    src/device/android_state.cpp
+    src/device/pcapdroid_controller.cpp
+    src/experiments/capture_source.cpp
+    src/experiments/integration_experiment.cpp
+    src/experiments/manifest_builder.cpp
     src/experiments/session_manifest.cpp
+    src/experiments/session_plan.cpp
     src/experiments/grouped_partitioner.cpp
     src/util/sha256.cpp
     src/util/logging.cpp

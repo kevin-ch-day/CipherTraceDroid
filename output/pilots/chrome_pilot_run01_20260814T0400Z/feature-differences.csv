@@ -1,0 +1,4 @@
+run_id,comparison,status,reason
+chrome_pilot_run01_20260814T0400Z,foreground-background,NOT_COMPUTED,No verified background interval
+chrome_pilot_run01_20260814T0400Z,background-device_control,NOT_COMPUTED,No verified background or device_control interval
+chrome_pilot_run01_20260814T0400Z,foreground-device_control,NOT_COMPUTED,No verified device_control interval

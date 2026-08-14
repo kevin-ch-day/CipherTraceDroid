@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ciphertracedroid/experiments/capture_source.hpp"
+
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -16,9 +18,12 @@ struct SessionManifestRow {
     ActivityState state{};
     std::filesystem::path capture_file;
     std::string capture_sha256;
+    CaptureSourceKind capture_source{CaptureSourceKind::routed_primary};
     double start_offset_seconds{};
     double end_offset_seconds{};
     bool include{};
+    bool synthetic_test_only{};
+    bool pilot{};
     std::size_t source_row{};
 };
 

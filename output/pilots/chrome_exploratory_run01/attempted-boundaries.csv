@@ -1,0 +1,5 @@
+event,utc_timestamp,valid,notes
+capture_active_confirmed,2026-08-14T04:15:08.894290022Z,true,Whole-device PCAPdroid VPN active
+device_control_gate_check,2026-08-14T04:15:24.042501594Z,false,Chrome was ResumedActivity and process was running
+abort_stop_request,2026-08-14T04:16:01.637629479Z,true,Documented stop request sent once
+manual_stop_confirmed,2026-08-14T04:16:12.800685719Z,true,VPN inactive

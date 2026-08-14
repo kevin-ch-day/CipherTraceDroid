@@ -1,0 +1,23 @@
+{
+  "run_id": "chrome_pilot_run01_20260814T0400Z",
+  "application": "Google Chrome",
+  "package": "com.android.chrome",
+  "version": "151.0.7922.137",
+  "capture_source": "pcapdroid_vpn_boundary_auxiliary",
+  "capture_scope": "target_app_filtered",
+  "pilot": true,
+  "exploratory": true,
+  "publication_primary_eligible": false,
+  "tls_decryption": false,
+  "full_payload": false,
+  "pcapng": false,
+  "block_quic": false,
+  "device_serial": "ZY22JK89DR",
+  "android": "15",
+  "clock_offset_seconds": 0,
+  "capture_first_timestamp_epoch": 1786680308.2810049,
+  "capture_last_timestamp_epoch": 1786680439.7312069,
+  "capture_sha256": "1892bc8c5288b1246d952d15c761195a0b3588e3e174002197c14e2cfec52f60",
+  "quality": "QUARANTINED",
+  "quality_reason": "Chrome resumed after HOME; no stable verified background interval exists."
+}

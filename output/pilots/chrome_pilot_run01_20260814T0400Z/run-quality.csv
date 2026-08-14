@@ -1,0 +1,2 @@
+run_id,status,reason,capture_valid,foreground_valid,background_valid,device_control_valid,vpn_cleanup_valid,hash_valid,features_finite
+chrome_pilot_run01_20260814T0400Z,QUARANTINED,Chrome resumed after HOME,true,true,false,false,true,true,true

@@ -1,0 +1,2 @@
+run_id,quality,capture_source,capture_scope,capture_duration_s,total_frames,valid_ipv4,valid_ipv6,tcp_packets,udp_packets,malformed_packets,valid_foreground_windows,valid_background_windows,valid_device_control_windows
+chrome_pilot_run01_20260814T0400Z,QUARANTINED,pcapdroid_vpn_boundary_auxiliary,target_app_filtered,131.450201988,41109,41109,0,23392,17717,0,11,0,0

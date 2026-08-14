@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace ciphertracedroid::traffic {
@@ -14,12 +15,13 @@ struct PacketRecord {
     double timestamp_seconds{};
     std::uint32_t captured_length{};
     std::uint32_t original_length{};
+    std::uint32_t ip_packet_length{};
     NetworkLayer network_layer{NetworkLayer::unknown};
     TransportProtocol transport_protocol{TransportProtocol::other};
     std::string source_address;
     std::string destination_address;
-    std::uint16_t source_port{};
-    std::uint16_t destination_port{};
+    std::optional<std::uint16_t> source_port;
+    std::optional<std::uint16_t> destination_port;
     Direction direction{Direction::unknown};
 };
 

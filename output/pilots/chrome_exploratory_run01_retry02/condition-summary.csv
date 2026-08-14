@@ -1,0 +1,4 @@
+state,scheduled_complete_windows,exported_nonempty_windows,nonempty_fraction,packet_count,total_ip_bytes,mean_packets_per_second,mean_ip_bytes_per_second,mean_ip_size,mean_tcp_fraction,mean_udp_fraction,mean_other_fraction
+device_control,12,2,0.166666667,26,5373,2.600000000,537.300000000,126.660000000,0.960000000,0.040000000,0.000000000
+foreground,24,23,0.958333333,1021,310284,8.878260870,2698.121739130,255.344741937,0.473248196,0.526751804,0.000000000
+background,24,6,0.250000000,275,180300,9.166666667,6010.000000000,260.589714715,0.743243243,0.256756757,0.000000000

@@ -19,8 +19,11 @@ struct CaptureSummary {
     double duration_seconds{};
     std::uint64_t captured_bytes{};
     std::uint64_t original_bytes{};
+    std::string timestamp_precision;
     std::size_t ipv4_count{};
     std::size_t ipv6_count{};
+    std::size_t non_ip_frame_count{};
+    std::size_t unsupported_frame_count{};
     std::size_t tcp_count{};
     std::size_t udp_count{};
     std::size_t other_protocol_count{};
