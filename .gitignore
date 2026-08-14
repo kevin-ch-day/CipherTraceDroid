@@ -1,0 +1,48 @@
+# Build output
+/build/
+/build-qa/
+/build-asan/
+/cmake-build-*/
+
+# Compiled objects
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.exe
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+
+# Raw network captures
+*.pcap
+*.pcapng
+*.cap
+data/raw/*
+!data/raw/.gitkeep
+
+# Generated datasets
+data/processed/*
+!data/processed/.gitkeep
+
+# Experiment output
+output/results/*
+output/models/*
+!output/results/.gitkeep
+!output/models/.gitkeep
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*~
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/

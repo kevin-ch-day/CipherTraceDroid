@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+for build_dir in "$project_dir/build" "$project_dir/build-qa" "$project_dir/build-asan"; do
+    if [[ -d $build_dir ]]; then
+        cmake -E remove_directory "$build_dir"
+        echo "Removed ${build_dir#$project_dir/}"
+    fi
+done
