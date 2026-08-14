@@ -23,6 +23,8 @@ Use `wlp3s0` as a dedicated NetworkManager AP sharing the wired `enp2s0` connect
 
 NetworkManager successfully activated a WPA AP on channel 11 with gateway `10.42.0.1`, while the wired route remained healthy. The Android device did not discover the SSID in a fresh ADB-requested scan and `cmd wifi connect-network` returned `Network is unreachable`; no Android packets reached the AP, no capture was started, and the profile was deleted. The initial AP method is therefore **not validated**. Investigate radio/firmware/channel compatibility with a user-visible phone scan or a second Wi-Fi adapter before retrying; do not treat host-side AP activation as proof of client reachability.
 
+A later host-only inspection confirmed that the adapter advertises AP support but found Fedora Wi-Fi software-blocked, leaving `wlp3s0` unavailable. This prevents a meaningful retry until Wi-Fi is re-enabled. The retry protocol now requires radio availability, phone-visible SSID confirmation, association/DHCP/DNS/HTTPS checks, station visibility, and a readable test PCAP before any research collection.
+
 ## PCAPdroid fallback assessment
 
 The attached device has PCAPdroid 1.9.1 installed and its capture-control activity is present. A read-only `get_status` Intent completed without starting a VPN. Its VPN capture must still be started with the user's consent dialog or a user-generated API key; CipherTraceDroid does not store or generate that key.

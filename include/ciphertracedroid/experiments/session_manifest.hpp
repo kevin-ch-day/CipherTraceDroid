@@ -28,6 +28,7 @@ struct SessionManifestRow {
 };
 
 [[nodiscard]] std::vector<SessionManifestRow> read_session_manifest(const std::filesystem::path& path);
+void validate_session_manifest_integrity(const std::vector<SessionManifestRow>& rows);
 [[nodiscard]] std::string to_string(ActivityState state);
 
 }  // namespace ciphertracedroid::experiments

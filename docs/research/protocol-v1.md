@@ -20,4 +20,4 @@ The initial window duration is five seconds. Only complete windows wholly contai
 
 No TLS decryption, full-payload capture, private browsing, credentials, messages, or other intentional private content is permitted. PCAPdroid runs remain auxiliary pilots and synthetic fixtures remain software-validation inputs. Neither can enter the routed-primary dataset.
 
-Run duration, transition guard, application set, repeat count, and environmental controls remain configurable and must be recorded. They will be finalized only after a routed pilot measures capture behavior and operational variance.
+Run duration, transition guard, application set, repeat count, and environmental controls remain configurable and must be recorded. They will be finalized only after a routed pilot measures capture behavior and operational variance. The proposed equal-duration schedule, interaction ledger, application criteria, and exclusion rules are in [Controlled workload protocol v1](controlled-workload-v1.md).

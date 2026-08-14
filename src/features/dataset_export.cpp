@@ -20,6 +20,7 @@ std::size_t export_features(const std::filesystem::path& manifest_path,
 {
     if (!std::isfinite(options.window_seconds) || options.window_seconds <= 0.0) throw std::invalid_argument("window duration must be finite and positive");
     const auto rows = experiments::read_session_manifest(manifest_path);
+    experiments::validate_session_manifest_integrity(rows);
     util::debug_log("features", "manifest validated; beginning export");
     const auto temporary = output_path.string() + ".tmp";
     std::ofstream output(temporary, std::ios::trunc);

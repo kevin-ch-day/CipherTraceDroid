@@ -19,6 +19,7 @@ add_library(ciphertracedroid_core STATIC
     src/capture/pcap_reader.cpp
     src/device/adb_client.cpp
     src/device/android_state.cpp
+    src/device/input_diagnostics.cpp
     src/device/pcapdroid_controller.cpp
     src/experiments/capture_source.cpp
     src/experiments/integration_experiment.cpp

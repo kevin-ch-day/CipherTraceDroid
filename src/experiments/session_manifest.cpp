@@ -1,8 +1,10 @@
 #include "ciphertracedroid/experiments/session_manifest.hpp"
 #include "ciphertracedroid/util/sha256.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <map>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
@@ -77,6 +79,34 @@ std::vector<SessionManifestRow> read_session_manifest(const std::filesystem::pat
     }
     if (rows.empty()) throw std::runtime_error("manifest contains no data rows");
     return rows;
+}
+
+void validate_session_manifest_integrity(const std::vector<SessionManifestRow>& rows)
+{
+    std::map<std::filesystem::path, std::vector<const SessionManifestRow*>> rows_by_capture;
+    for (const auto& row : rows) {
+        if (util::sha256_file(row.capture_file) != row.capture_sha256) {
+            row_error(row.source_row, "capture SHA-256 does not match the manifest");
+        }
+        rows_by_capture[row.capture_file.lexically_normal()].push_back(&row);
+    }
+    for (auto& [capture_file, capture_rows] : rows_by_capture) {
+        (void)capture_file;
+        std::sort(capture_rows.begin(), capture_rows.end(),
+                  [](const auto* left, const auto* right) {
+                      if (left->start_offset_seconds != right->start_offset_seconds) {
+                          return left->start_offset_seconds < right->start_offset_seconds;
+                      }
+                      return left->end_offset_seconds < right->end_offset_seconds;
+                  });
+        for (std::size_t index = 1; index < capture_rows.size(); ++index) {
+            const auto& previous = *capture_rows[index - 1];
+            const auto& current = *capture_rows[index];
+            if (current.start_offset_seconds < previous.end_offset_seconds) {
+                row_error(current.source_row, "time range overlaps session '" + previous.session_id + "'");
+            }
+        }
+    }
 }
 
 }  // namespace ciphertracedroid::experiments

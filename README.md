@@ -67,7 +67,7 @@ session_id,app_id,run_id,state,capture_file,capture_sha256,capture_source,start_
 
 `capture_source` is one of `routed_primary`, `pcapdroid_vpn_boundary_auxiliary`, or `synthetic_fixture`. The synthetic flag must agree with the typed source.
 
-For non-sensitive runtime diagnostics, set `CIPHERTRACEDROID_LOG=debug`; messages go to stderr and never alter CSV/JSON results. For a read-only NetworkManager/AP diagnostic bundle, run `./scripts/ap-pilot-diagnose.sh`.
+For non-sensitive runtime diagnostics, set `CIPHERTRACEDROID_LOG=debug`; messages go to stderr and never alter CSV/JSON results. For a read-only NetworkManager/AP diagnostic bundle, run `./scripts/ap-pilot-diagnose.sh`. It records radio-block state, Wi-Fi capabilities, active routes, stations, neighbors, and boot diagnostics without enabling an AP or changing host networking.
 
 Feature rows use schema version 1 and include typed capture-source plus window/session/app/run/state provenance. Fixed complete windows are constructed independently within each manifest-provided activity-state interval, so they never span a state boundary. Direction remains unknown unless a user-supplied device identity matches an endpoint. See [Feature Schema v1](docs/research/feature-schema-v1.md).
 
@@ -116,6 +116,10 @@ Transitions also require the screen to be awake and the device unlocked. `device
 
 `device status` also measures whole-second device-to-host clock offset. Record that value with session provenance; PCAP interval boundaries remain host-relative.
 
+For the current routed-primary topology blocker and approved AP/Ethernet alternatives, see [Routed-primary topology options](docs/research/routed-topology-options.md). Do not use USB RNDIS or phone-hotspot client traffic as phone-traffic capture paths.
+
+The proposed application-neutral workload, interaction ledger, and exclusion rules are in [Controlled workload protocol v1](docs/research/controlled-workload-v1.md).
+
 It also reports PCAPdroid availability and whether a VPN is active. PCAPdroid is an opt-in, user-consented fallback with a different measurement point; see [capture architecture](docs/research/capture-architecture.md) before using it.
 
 For a read-only state probe at either boundary:
@@ -130,7 +134,7 @@ It reports `ResumedActivity` from `dumpsys activity activities` as the primary s
 Run one capture-free state-control qualification attempt with immutable JSON evidence:
 
 ```bash
-./run.sh session dry-run com.android.chrome output/state-control/attempt01.json
+./run.sh session dry-run com.android.chrome output/state-control/attempt01.json --hands-off-confirmed
 ```
 
 This command requires the Android VPN to be inactive, verifies Chrome foreground, sends one resolved HOME action, and polls state for 15 consecutive seconds. Target resumption, lock, Notification Shade, unrelated activity, unknown evidence, or excessive observation gaps fail immediately. It never starts packet capture.

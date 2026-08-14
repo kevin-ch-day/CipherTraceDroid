@@ -20,7 +20,7 @@ Before a transition, CipherTraceDroid checks for Notification Shade through `mCu
 
 Transitions also require Android to report an awake screen and an unlocked user. The tool uses the power and trust service reports as gates and never attempts to bypass a device lock screen.
 
-`session dry-run` additionally requires the VPN to be inactive. Its stabilizer requires 15 continuous seconds of non-target state and a normal launcher final state. Launcher-owned transients are permitted only within the excluded guard. Target resumption, lock, Notification Shade, unrelated activity, unknown evidence, or an excessive polling gap fails immediately. A future coordinator-generated background manifest row requires the resulting pass object; legacy manifests remain readable for artifact traceability.
+`session dry-run` additionally requires the VPN to be inactive and the explicit `--hands-off-confirmed` acknowledgment after the phone has been untouched for at least five seconds. Its stabilizer requires 15 continuous seconds of non-target state and a normal launcher final state. Launcher-owned transients are permitted only within the excluded guard. Target resumption, lock, Notification Shade, unrelated activity, unknown evidence, or an excessive polling gap fails immediately. A future coordinator-generated background manifest row requires the resulting pass object; legacy manifests remain readable for artifact traceability.
 
 `device status` samples Android and host epoch seconds around an ADB query and reports the whole-second device-minus-host offset. This records clock alignment for provenance; PCAP boundaries are still host-relative because the capture originates on Fedora.
 

@@ -11,6 +11,7 @@
 #include "ciphertracedroid/capture/pcap_reader.hpp"
 #include "ciphertracedroid/device/adb_client.hpp"
 #include "ciphertracedroid/device/android_state.hpp"
+#include "ciphertracedroid/device/input_diagnostics.hpp"
 #include "ciphertracedroid/device/pcapdroid_controller.hpp"
 #include "ciphertracedroid/experiments/manifest_builder.hpp"
 #include "ciphertracedroid/traffic/windowing.hpp"
@@ -132,16 +133,16 @@ void test_pcap_reader()
         auto ipv4_udp = ethernet(0x0800); ipv4_udp.resize(42); ipv4_udp[14] = 0x45; ipv4_udp[16] = 0; ipv4_udp[17] = 28; ipv4_udp[23] = 17; ipv4_udp[26] = 8; ipv4_udp[27] = 8; ipv4_udp[28] = 4; ipv4_udp[29] = 4; ipv4_udp[30] = 192; ipv4_udp[31] = 168; ipv4_udp[32] = 1; ipv4_udp[33] = 42; ipv4_udp[34] = 0; ipv4_udp[35] = 53; ipv4_udp[36] = 0x13; ipv4_udp[37] = 0x88;
         auto ipv6_udp = ethernet(0x86dd); ipv6_udp.resize(62); ipv6_udp[14] = 0x60; ipv6_udp[18] = 0; ipv6_udp[19] = 8; ipv6_udp[20] = 17; ipv6_udp[22] = 0x20; ipv6_udp[23] = 0x01; ipv6_udp[38] = 0x20; ipv6_udp[39] = 0x01; ipv6_udp[54] = 0x13; ipv6_udp[55] = 0x88; ipv6_udp[56] = 0x01; ipv6_udp[57] = 0xbb;
         auto arp = ethernet(0x0806); arp.resize(42);
-        write_packet(out, 10, ipv4_tcp); write_packet(out, 11, ipv4_udp); write_packet(out, 12, ipv6_udp); write_packet(out, 13, arp); write_packet(out, 14, std::vector<std::uint8_t>(10));
+        write_packet(out, 10, ipv4_tcp); write_packet(out, 11, ipv4_udp); write_packet(out, 12, ipv6_udp); write_packet(out, 13, arp); write_packet(out, 14, std::vector<std::uint8_t>(10)); write_packet(out, 20, arp);
     }
     const auto capture = ciphertracedroid::capture::read_pcap(path.string(), "192.168.1.42");
-    require(capture.summary.packet_count == 5 && capture.packets.size() == 3, "PCAP frame and valid-IP counts");
+    require(capture.summary.packet_count == 6 && capture.packets.size() == 3, "PCAP frame and valid-IP counts");
     require(capture.summary.ipv4_count == 2 && capture.summary.ipv6_count == 1, "IP version parsing");
     require(capture.packets[0].ip_packet_length == 40 && capture.packets[1].ip_packet_length == 28 && capture.packets[2].ip_packet_length == 48, "IP length excludes Ethernet framing");
     require(capture.summary.tcp_count == 1 && capture.summary.udp_count == 2, "transport parsing");
-    require(capture.summary.non_ip_frame_count == 1 && capture.summary.malformed_packet_count == 1 && capture.summary.duration_seconds == 4.0, "non-IP and malformed frames remain in capture accounting");
+    require(capture.summary.non_ip_frame_count == 2 && capture.summary.malformed_packet_count == 1 && capture.summary.duration_seconds == 10.0, "non-IP and malformed frames remain in capture accounting");
     require(capture.packets.front().direction == ciphertracedroid::traffic::Direction::outbound, "explicit device direction");
-    require(ciphertracedroid::capture::summary_to_json(capture.summary).find("\"packet_count\":5") != std::string::npos, "deterministic JSON summary");
+    require(ciphertracedroid::capture::summary_to_json(capture.summary).find("\"packet_count\":6") != std::string::npos, "deterministic JSON summary");
     std::string path_text = path.string();
     char program[] = "ciphertracedroid";
     char inspect[] = "inspect";
@@ -176,6 +177,16 @@ void test_pcap_reader()
                 std::filesystem::is_regular_file(bundle / "condition-profiles.csv") &&
                 std::filesystem::is_regular_file(bundle / "checksums.sha256"),
             "condition analysis writes deterministic evidence artifacts");
+    std::string validate_manifest_text = manifest.string();
+    char validate_program[] = "ciphertracedroid";
+    char validate_command[] = "validate-manifest";
+    char* validate_arguments[] = {validate_program, validate_command, validate_manifest_text.data()};
+    require(ciphertracedroid::run(3, validate_arguments) == 0, "manifest validation recomputes capture evidence");
+    const auto out_of_range_manifest = path.parent_path() / "ciphertracedroid_out_of_range_manifest.csv";
+    { std::ofstream out(out_of_range_manifest); out << "session_id,app_id,run_id,state,capture_file,capture_sha256,capture_source,start_offset_s,end_offset_s,include,synthetic_test_only,pilot\n" << "s1,app,r1,foreground," << path.filename().string() << ',' << ciphertracedroid::util::sha256_file(path) << ",routed_primary,0,11,true,false,false\n"; }
+    std::string out_of_range_manifest_text = out_of_range_manifest.string();
+    char* out_of_range_arguments[] = {validate_program, validate_command, out_of_range_manifest_text.data()};
+    require(ciphertracedroid::run(3, out_of_range_arguments) != 0, "manifest validation rejects intervals beyond capture coverage");
     bool analysis_overwrite_rejected = false;
     try {
         (void)ciphertracedroid::analysis::write_condition_analysis_bundle(
@@ -183,7 +194,7 @@ void test_pcap_reader()
     } catch (const std::runtime_error&) { analysis_overwrite_rejected = true; }
     require(analysis_overwrite_rejected, "condition analysis refuses overwrite");
     std::filesystem::remove_all(analysis_directory);
-    std::filesystem::remove(manifest); std::filesystem::remove(csv);
+    std::filesystem::remove(manifest); std::filesystem::remove(out_of_range_manifest); std::filesystem::remove(csv);
     std::filesystem::remove(path);
     std::filesystem::remove(raw_path);
 }
@@ -200,11 +211,17 @@ void test_manifest_and_hash()
     { std::ofstream out(manifest); out << "session_id,app_id,run_id,state,capture_file,capture_sha256,capture_source,start_offset_s,end_offset_s,include,synthetic_test_only,pilot\n" << "s1,app,r1,foreground,capture.pcap," << hash << ",routed_primary,0,10,true,false,false\n"; }
     const auto rows = ciphertracedroid::experiments::read_session_manifest(manifest);
     require(rows.size() == 1 && rows[0].capture_file == capture && rows[0].include, "strict manifest parsing");
-    std::string manifest_text = manifest.string();
-    char program[] = "ciphertracedroid";
-    char validate[] = "validate-manifest";
-    char* arguments[] = {program, validate, manifest_text.data()};
-    require(ciphertracedroid::run(3, arguments) == 0, "manifest validation CLI");
+    const auto overlap_manifest = directory / "overlap.csv";
+    { std::ofstream out(overlap_manifest); out << "session_id,app_id,run_id,state,capture_file,capture_sha256,capture_source,start_offset_s,end_offset_s,include,synthetic_test_only,pilot\n" << "s1,app,r1,foreground,capture.pcap," << hash << ",routed_primary,0,10,true,false,false\n" << "s2,app,r1,background,capture.pcap," << hash << ",routed_primary,5,11,true,false,false\n"; }
+    bool overlap_rejected = false;
+    try { ciphertracedroid::experiments::validate_session_manifest_integrity(ciphertracedroid::experiments::read_session_manifest(overlap_manifest)); }
+    catch (const std::runtime_error&) { overlap_rejected = true; }
+    require(overlap_rejected, "manifest integrity rejects overlapping capture intervals");
+    bool stale_hash_rejected = false;
+    std::ofstream mutate(capture, std::ios::app | std::ios::binary); mutate << "changed"; mutate.close();
+    try { ciphertracedroid::experiments::validate_session_manifest_integrity(rows); }
+    catch (const std::runtime_error&) { stale_hash_rejected = true; }
+    require(stale_hash_rejected, "manifest integrity rejects a changed capture");
     std::filesystem::remove_all(directory);
 }
 
@@ -391,6 +408,21 @@ void test_android_state_stabilizer_and_manifest_gate()
     require(builder.rows().size() == 1, "passing gate authorizes one background interval");
 }
 
+void test_input_diagnostics()
+{
+    using namespace ciphertracedroid::device;
+    const auto quiet = summarize_getevent("");
+    require(quiet.kind == InputEvidenceKind::unavailable, "unavailable input stream remains explicit");
+    const auto touch = summarize_getevent("[ 1.0] /dev/input/event8: EV_KEY BTN_TOUCH DOWN\n");
+    require(touch.kind == InputEvidenceKind::touch_contact, "touch contact is classified");
+    const auto key = summarize_getevent("[ 1.0] /dev/input/event11: EV_KEY KEY_HOME DOWN\n");
+    require(key.kind == InputEvidenceKind::key_event, "key event is classified");
+    require(classify_state_gate_failure(true, touch, true, true) == StateGateFailureCause::launcher_shortcut_activation,
+            "aligned touch has a distinct failure cause");
+    require(classify_state_gate_failure(true, quiet, false, true) == StateGateFailureCause::task_transition_unattributed,
+            "unattributed task return remains explicit");
+}
+
 void test_complete_window_analysis()
 {
     using namespace ciphertracedroid;
@@ -438,7 +470,7 @@ void test_complete_window_analysis()
 
 int main()
 {
-    try { test_direction_assignment(); test_state_boundaries(); test_features(); test_pcap_reader(); test_manifest_and_hash(); test_grouped_partitioning(); test_capture_source_and_experiment_pipeline(); test_adb_device_parser(); test_activity_event_parser(); test_pcapdroid_request_contract(); test_session_plan_guards(); test_android_state_stabilizer_and_manifest_gate(); test_complete_window_analysis(); }
+    try { test_direction_assignment(); test_state_boundaries(); test_features(); test_pcap_reader(); test_manifest_and_hash(); test_grouped_partitioning(); test_capture_source_and_experiment_pipeline(); test_adb_device_parser(); test_activity_event_parser(); test_pcapdroid_request_contract(); test_session_plan_guards(); test_android_state_stabilizer_and_manifest_gate(); test_input_diagnostics(); test_complete_window_analysis(); }
     catch (const std::exception& error) { std::cerr << "test failure: " << error.what() << '\n'; return EXIT_FAILURE; }
     return EXIT_SUCCESS;
 }

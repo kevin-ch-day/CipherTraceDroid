@@ -205,6 +205,7 @@ std::filesystem::path write_condition_analysis_bundle(
         throw std::runtime_error("analysis output already exists: " + output_directory.string());
     }
     const auto rows = experiments::read_session_manifest(manifest_path);
+    experiments::validate_session_manifest_integrity(rows);
     std::filesystem::create_directories(output_directory);
     std::map<std::string, capture::CaptureData> captures;
     auto load_packets = [&](const experiments::SessionManifestRow& row) -> const std::vector<traffic::PacketRecord>& {

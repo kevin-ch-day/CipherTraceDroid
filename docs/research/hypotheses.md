@@ -27,6 +27,9 @@ This document separates statements registered before controlled exploratory coll
 - The first HOME transition did not produce a stable background state: Chrome resumed during the intended background gate.
 - The run is quarantined and provides no foreground/background comparison.
 - `chrome_exploratory_run01` started a whole-device auxiliary capture, but PCAPdroid's capture-control completion reactivated an existing Chrome task. The device-control gate failed before any condition interval began, so the attempt is invalid.
+- `chrome_exploratory_run01_retry02` is a valid, unfiltered PCAPdroid VPN-boundary **auxiliary** pilot. Its scheduled state sentinels passed for 60 seconds of `device_control`, 120 seconds of foreground, and 120 seconds of background. It is not routed-primary evidence and cannot establish an app-level or state-effect finding.
+- In the associated five-second ledger, foreground had traffic in 23/24 scheduled windows, background in 6/24, and `device_control` in 2/12. These are descriptive observations from one run, not estimates of a state effect.
+- Capture-free Chrome state qualification has passed twice and failed once on the tested device. The failed attempt resumed Chrome two seconds after HOME; the later repeat held the normal launcher for the full 15-second guard. The gate therefore detects intermittent contamination but has not yet shown the repeatability needed for collection.
 
 ## Unresolved questions
 

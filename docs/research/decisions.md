@@ -57,3 +57,19 @@
 **Decision:** mixed training contributes the same deterministic sample count from each application/run/state group, using training data only.
 
 **Reason:** a longer state segment must not dominate solely by producing more windows. Test-set information is never consulted.
+
+## 2026-08-14 — State qualification is a per-run gate
+
+**Decision:** require a newly passing capture-free state qualification before each physical collection run, and exclude any condition whose sentinel detects an unexpected target resume.
+
+**Reason:** on the tested Motorola device, two 15-second qualifications held the normal launcher while one resumed Chrome at two seconds. A HOME request alone is therefore insufficient evidence of a background label.
+
+**Alternatives:** infer background from process presence, a single immediate launcher probe, or the command success result; rejected because all can miss a later task return.
+
+## 2026-08-14 — Manifest integrity before analysis
+
+**Decision:** recompute every capture SHA-256, reject overlapping ranges within a capture, and require each manifest interval to fit the readable PCAP timeline before accepting a manifest for analysis.
+
+**Reason:** file presence and a hash-shaped string do not establish that the current capture matches the recorded evidence. Overlapping or out-of-coverage intervals can duplicate observations or turn an absent capture tail into apparent quiet traffic.
+
+**Alternatives:** defer these checks to feature export; rejected because a separately successful `validate-manifest` command must be meaningful on its own.

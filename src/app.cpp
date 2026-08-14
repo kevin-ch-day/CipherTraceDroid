@@ -14,6 +14,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
 #include <string>
 #include <string_view>
 #include <sstream>
@@ -74,7 +75,7 @@ void print_usage(std::ostream& out)
         << "  device status  Inspect the single connected Android device through ADB.\n"
         << "  session plan <package> <output.json>\n"
         << "      Write a no-overwrite collection plan with package/device provenance.\n"
-        << "  session dry-run <package> <new-output.json>\n"
+        << "  session dry-run <package> <new-output.json> --hands-off-confirmed\n"
         << "      Test one capture-free foreground-to-background stabilization.\n"
         << "  quickstart   Show the recommended first workflow.\n"
         << "  info         Show build information.\n"
@@ -101,7 +102,7 @@ void print_command_help(std::ostream& out, std::string_view command)
     if (command == "validate-manifest") {
         out << accent(out) << "validate-manifest" << reset(out) << " — validate a session manifest\n\n"
             << "Usage:\n  ciphertracedroid validate-manifest <manifest.csv>\n\n"
-            << "Checks capture files, mandatory SHA-256 values, conditions, intervals, and duplicate session IDs.\n";
+            << "Recomputes capture hashes and checks files, non-overlapping intervals, and readable capture coverage.\n";
         return;
     }
     if (command == "experiment") {
@@ -425,10 +426,13 @@ int run(int argc, char* argv[])
                 return kCliError;
             }
         }
-        if (argc == 5 && std::string_view{argv[2]} == "dry-run") {
+        if ((argc == 5 || argc == 6) && std::string_view{argv[2]} == "dry-run") {
             const std::string package_name{argv[3]};
             const std::filesystem::path output_path{argv[4]};
             try {
+                if (argc != 6 || std::string_view{argv[5]} != "--hands-off-confirmed") {
+                    throw std::runtime_error("operator acknowledgment required: rerun with --hands-off-confirmed after keeping the phone untouched for at least five seconds");
+                }
                 if (std::filesystem::exists(output_path)) {
                     throw std::runtime_error("dry-run output already exists: " + output_path.string());
                 }
@@ -565,7 +569,7 @@ int run(int argc, char* argv[])
                   << "       ciphertracedroid session transition <package-name> <foreground|background>\n"
                   << "       ciphertracedroid session observe <package-name>\n"
                   << "       ciphertracedroid session history <package-name>\n"
-                  << "       ciphertracedroid session dry-run <package-name> <new-output.json>\n";
+                  << "       ciphertracedroid session dry-run <package-name> <new-output.json> --hands-off-confirmed\n";
         return kCliError;
     }
 
@@ -690,6 +694,16 @@ int run(int argc, char* argv[])
         }
         try {
             const auto rows = experiments::read_session_manifest(argv[2]);
+            experiments::validate_session_manifest_integrity(rows);
+            std::map<std::filesystem::path, double> capture_durations;
+            for (const auto& row : rows) {
+                auto [entry, inserted] = capture_durations.try_emplace(row.capture_file);
+                if (inserted) entry->second = capture::read_pcap(row.capture_file.string()).summary.duration_seconds;
+                if (row.end_offset_seconds > entry->second) {
+                    throw std::runtime_error("manifest row " + std::to_string(row.source_row) +
+                                             ": interval ends after the readable capture timeline");
+                }
+            }
             std::cout << "Valid manifest: " << rows.size() << " rows\n";
             return kSuccess;
         } catch (const std::exception& error) {
