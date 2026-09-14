@@ -14,6 +14,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 add_test(NAME core_contracts COMMAND ciphertracedroid_tests)
+set_tests_properties(core_contracts PROPERTIES
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
 add_test(NAME cli_default COMMAND ciphertracedroid)
 add_test(NAME cli_help COMMAND ciphertracedroid --help)
 add_test(NAME cli_version COMMAND ciphertracedroid --version)

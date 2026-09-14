@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install native dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpcap-dev libssl-dev ninja-build
+
+      - name: Configure
+        run: cmake -S . -B "$RUNNER_TEMP/ciphertracedroid-build" -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build "$RUNNER_TEMP/ciphertracedroid-build" --parallel 2
+
+      - name: Test
+        run: ctest --test-dir "$RUNNER_TEMP/ciphertracedroid-build" --output-on-failure
